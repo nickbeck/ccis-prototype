@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atria — Care Coordinator Morning Queue</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0A2342;
+    --navy2:   #0D2E56;
+    --navy3:   #0F3366;
+    --teal:    #028090;
+    --teal2:   #02A8BC;
+    --teallt:  #00C4DA;
+    --coral:   #E85D4A;
+    --gold:    #F5A623;
+    --green:   #27AE60;
+    --greenlt: #2ECC71;
+    --slate:   #4A6B7C;
+    --muted:   #7A9BAD;
+    --ice:     #E8F4F8;
+    --offwhite:#F7FBFC;
+    --border:  #D0E8F0;
+    --white:   #FFFFFF;
+    --sidebar: #071A30;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--sidebar);
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+  .topbar-logo { font-size: 12px; font-weight: 600; letter-spacing: 2.5px; color: var(--teallt); text-transform: uppercase; }
+  .topbar-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.1); }
+  .topbar-title { font-size: 12px; color: var(--muted); }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .topbar-badge {
+    background: rgba(2,128,144,0.18);
+    border: 1px solid rgba(2,128,144,0.35);
+    color: var(--teallt);
+    font-size: 10px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;
+  }
+  .topbar-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  .ai-pulse { animation: pulse 2.2s infinite; }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 196px;
+    background: var(--sidebar);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column;
+    padding: 14px 0;
+    flex-shrink: 0;
+  }
+  .sidebar-section {
+    font-size: 9px; letter-spacing: 1.5px; color: rgba(122,155,173,0.45);
+    text-transform: uppercase; padding: 8px 16px 4px; font-weight: 500;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 16px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--white); }
+  .nav-item.active { background: rgba(2,128,144,0.14); color: var(--white); font-weight: 500; }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--teal); border-radius: 0 2px 2px 0;
+  }
+  .nav-icon { width: 15px; height: 15px; opacity: 0.65; flex-shrink: 0; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; background: var(--coral);
+    color: white; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .nav-badge.teal { background: var(--teal); }
+  .sidebar-footer {
+    margin-top: auto; padding: 10px 16px;
+    font-size: 10px; color: rgba(122,155,173,0.35);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0C1E35; }
+
+  .queue-header {
+    padding: 16px 22px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .queue-header h1 { font-size: 17px; font-weight: 600; }
+  .queue-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .queue-header-right { margin-left: auto; display: flex; gap: 7px; }
+  .btn-sm {
+    padding: 5px 13px; border-radius: 5px; font-size: 11px; font-weight: 500;
+    cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .btn-ghost { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid rgba(255,255,255,0.08); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex; gap: 5px; padding: 9px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0;
+  }
+  .filter-pill {
+    padding: 3px 11px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid transparent;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    background: rgba(255,255,255,0.05); color: var(--muted);
+  }
+  .filter-pill:hover { background: rgba(255,255,255,0.09); color: var(--white); }
+  .filter-pill.active { background: rgba(2,128,144,0.22); color: var(--teallt); border-color: rgba(2,128,144,0.38); }
+
+  /* ── TASK LIST ── */
+  .task-list { flex: 1; overflow-y: auto; padding: 10px 22px 16px; }
+  .task-list::-webkit-scrollbar { width: 3px; }
+  .task-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .task-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px; margin-bottom: 7px; padding: 12px 14px;
+    cursor: pointer; transition: all 0.18s; position: relative; overflow: hidden;
+  }
+  .task-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; background: var(--card-accent, var(--teal));
+    border-radius: 10px 0 0 10px;
+  }
+  .task-card.urgent  { --card-accent: var(--coral); }
+  .task-card.high    { --card-accent: var(--gold); }
+  .task-card.normal  { --card-accent: var(--teal); }
+  .task-card.low     { --card-accent: var(--slate); }
+  .task-card.done    { --card-accent: var(--green); opacity: 0.45; }
+  .task-card.overridden { opacity: 0.7; }
+  .task-card:hover   { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
+  .task-card.selected { background: rgba(2,128,144,0.11); border-color: rgba(2,196,218,0.28); }
+
+  .task-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+  .priority-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.7px;
+    padding: 2px 7px; border-radius: 3px; text-transform: uppercase; flex-shrink: 0; margin-top: 2px;
+  }
+  .badge-urgent   { background: rgba(232,93,74,0.2);  color: var(--coral); }
+  .badge-high     { background: rgba(245,166,35,0.2); color: var(--gold); }
+  .badge-normal   { background: rgba(2,128,144,0.2);  color: var(--teallt); }
+  .badge-low      { background: rgba(74,107,124,0.2); color: var(--muted); }
+  .badge-done     { background: rgba(39,174,96,0.2);  color: var(--green); }
+  .badge-override { background: rgba(39,174,96,0.15); color: var(--greenlt); border: 1px solid rgba(39,174,96,0.3); }
+
+  .task-member { font-size: 13px; font-weight: 600; color: var(--white); flex: 1; }
+  .task-time   { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; flex-shrink: 0; }
+  .task-desc   { font-size: 11.5px; color: #8BAFC2; margin-bottom: 6px; line-height: 1.4; }
+
+  /* AI REASON ROW */
+  .task-reason {
+    font-size: 10.5px; color: rgba(0,196,218,0.75);
+    background: rgba(2,128,144,0.1);
+    border-radius: 4px; padding: 4px 8px; margin-bottom: 7px;
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .task-reason:hover { background: rgba(2,128,144,0.18); }
+  .task-reason .reason-expand { margin-left: auto; font-size: 9px; color: var(--teal2); }
+
+  /* OVERRIDE PILL */
+  .override-pill {
+    font-size: 10px; color: var(--greenlt);
+    background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25);
+    border-radius: 4px; padding: 3px 8px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  /* ACTIONS */
+  .task-actions { display: flex; gap: 5px; align-items: center; }
+  .action-btn {
+    padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 500;
+    cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .btn-draft    { background: var(--teal); color: white; }
+  .btn-draft:hover { background: var(--teal2); }
+  .btn-escalate { background: rgba(232,93,74,0.14); color: #F08070; border: 1px solid rgba(232,93,74,0.22); }
+  .btn-escalate:hover { background: rgba(232,93,74,0.24); }
+  .btn-override { background: rgba(39,174,96,0.13); color: var(--greenlt); border: 1px solid rgba(39,174,96,0.22); }
+  .btn-override:hover { background: rgba(39,174,96,0.22); }
+  .btn-snooze { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid rgba(255,255,255,0.09); }
+  .btn-snooze:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+  .btn-done   { background: rgba(39,174,96,0.14); color: var(--green); border: 1px solid rgba(39,174,96,0.2); }
+  .btn-done:hover { background: rgba(39,174,96,0.24); }
+
+  .task-tags { margin-left: auto; display: flex; gap: 4px; }
+  .tag { font-size: 9.5px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.07); color: var(--muted); }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    width: 296px; background: var(--sidebar);
+    border-left: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+  }
+  .panel-header { padding: 13px 15px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px; font-weight: 600; }
+  .panel-section { padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .panel-label { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; font-weight: 500; }
+  .panel-value { font-size: 12px; color: #8BAFC2; line-height: 1.5; }
+  .member-stat { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .stat-label { font-size: 11px; color: var(--muted); }
+  .stat-val { font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .stat-val.red   { color: var(--coral); }
+  .stat-val.gold  { color: var(--gold); }
+  .stat-val.green { color: var(--green); }
+
+  /* ── AI SCORE PANEL ── */
+  .score-block { padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .score-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .score-factor { font-size: 11px; color: var(--muted); flex: 1; }
+  .score-bar-wrap { width: 72px; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .score-num { font-size: 10px; font-family: 'DM Mono', monospace; width: 24px; text-align: right; }
+  .total-score {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .total-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .total-val { font-size: 14px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+  .empty-panel {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%; color: var(--muted); font-size: 12px; text-align: center;
+    padding: 24px; gap: 8px;
+  }
+  .empty-icon { font-size: 26px; opacity: 0.25; }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(7,26,48,0.82);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: #0D2245;
+    border: 1px solid rgba(2,196,218,0.18);
+    border-radius: 13px; width: 520px; max-height: 88vh;
+    overflow-y: auto;
+    transform: translateY(14px); transition: transform 0.22s;
+    box-shadow: 0 20px 70px rgba(0,0,0,0.5);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal::-webkit-scrollbar { width: 4px; }
+  .modal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .modal-header {
+    padding: 17px 19px 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .modal-title    { font-size: 15px; font-weight: 600; }
+  .modal-subtitle { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .modal-close {
+    background: rgba(255,255,255,0.07); border: none; cursor: pointer;
+    color: var(--muted); width: 26px; height: 26px; border-radius: 5px;
+    font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+  .modal-body { padding: 15px 19px; }
+  .modal-actions {
+    display: flex; gap: 7px; padding: 13px 19px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .btn-send {
+    flex: 1; padding: 9px; background: var(--teal); color: white; border: none;
+    border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .btn-send:hover { background: var(--teal2); }
+  .btn-send.red { background: var(--coral); }
+  .btn-send.red:hover { background: #f06d5a; }
+  .btn-send.green { background: #1e8a4a; }
+  .btn-send.green:hover { background: var(--green); }
+  .btn-discard {
+    padding: 9px 15px; background: rgba(255,255,255,0.06); color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 12px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .btn-discard:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+  /* DRAFT */
+  .draft-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--teallt); margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
+  .draft-ai-chip { font-size: 9px; background: rgba(2,128,144,0.22); padding: 1px 7px; border-radius: 3px; color: var(--teallt); }
+  .draft-textarea {
+    width: 100%; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; line-height: 1.65; padding: 11px 13px;
+    resize: vertical; min-height: 130px; transition: border-color 0.15s;
+  }
+  .draft-textarea:focus { outline: none; border-color: rgba(2,196,218,0.38); }
+  .draft-meta { font-size: 10px; color: var(--muted); margin-top: 7px; margin-bottom: 12px; display: flex; gap: 12px; }
+
+  /* SNOOZE */
+  .snooze-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+  .snooze-opt {
+    padding: 9px; border-radius: 6px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08); color: var(--muted); font-size: 12px;
+    cursor: pointer; text-align: center; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .snooze-opt:hover { background: rgba(255,255,255,0.09); color: var(--white); }
+  .snooze-opt.selected { background: rgba(2,128,144,0.18); color: var(--teallt); border-color: rgba(2,196,218,0.32); }
+
+  /* OVERRIDE */
+  .override-score-preview {
+    background: rgba(255,255,255,0.04); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+  }
+  .override-score-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+  .override-score-label { font-size: 11px; color: var(--muted); flex: 1; }
+  .override-score-bar-wrap { width: 60px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .override-score-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .override-change { font-size: 10px; font-family: 'DM Mono', monospace; width: 28px; text-align: right; }
+  .change-down { color: var(--coral); }
+  .change-up   { color: var(--greenlt); }
+  .change-same { color: var(--muted); }
+
+  .override-priority-select {
+    display: flex; gap: 6px; margin-bottom: 12px;
+  }
+  .prio-opt {
+    flex: 1; padding: 8px 4px; border-radius: 6px; cursor: pointer; text-align: center;
+    font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s; letter-spacing: 0.3px;
+  }
+  .prio-opt:hover { opacity: 0.85; }
+  .prio-opt.urgent { background: rgba(232,93,74,0.18); color: var(--coral); border-color: rgba(232,93,74,0.3); }
+  .prio-opt.high   { background: rgba(245,166,35,0.18); color: var(--gold); border-color: rgba(245,166,35,0.3); }
+  .prio-opt.normal { background: rgba(2,128,144,0.18); color: var(--teallt); border-color: rgba(2,128,144,0.3); }
+  .prio-opt.low    { background: rgba(74,107,124,0.18); color: var(--muted); border-color: rgba(74,107,124,0.3); }
+  .prio-opt.dimmed { opacity: 0.3; }
+  .prio-opt.active-sel { box-shadow: 0 0 0 2px currentColor; }
+
+  .form-label { font-size: 10px; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .form-textarea, .form-select {
+    width: 100%; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; padding: 8px 11px;
+  }
+  .form-textarea { resize: none; height: 72px; }
+  .form-textarea:focus, .form-select:focus { outline: none; border-color: rgba(2,196,218,0.35); }
+  .form-select option { background: #0D2245; }
+
+  .model-note {
+    font-size: 10px; color: rgba(0,196,218,0.5);
+    background: rgba(2,128,144,0.08); border-radius: 5px; padding: 7px 10px;
+    margin-top: 10px; line-height: 1.5;
+  }
+
+  /* ESCALATE */
+  .escalate-form { display: flex; flex-direction: column; gap: 10px; }
+
+  /* AI SCORE BREAKDOWN (inline expand) */
+  .score-expand {
+    background: rgba(2,128,144,0.08);
+    border: 1px solid rgba(2,128,144,0.15);
+    border-radius: 7px; padding: 10px 12px; margin-bottom: 7px;
+    display: none;
+  }
+  .score-expand.open { display: block; }
+  .score-expand-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .se-label  { font-size: 10px; color: var(--muted); flex: 1; }
+  .se-bar-w  { width: 60px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .se-bar    { height: 100%; border-radius: 3px; }
+  .se-num    { font-size: 10px; font-family: 'DM Mono', monospace; width: 22px; text-align: right; color: var(--white); }
+  .se-total  { display: flex; justify-content: space-between; margin-top: 7px; padding-top: 7px; border-top: 1px solid rgba(255,255,255,0.07); }
+  .se-total-label { font-size: 10px; color: var(--muted); }
+  .se-total-val   { font-size: 12px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #0D2E56;
+    border: 1px solid rgba(2,196,218,0.22);
+    border-radius: 9px; padding: 11px 16px;
+    font-size: 12px; display: flex; align-items: center; gap: 9px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    transform: translateY(80px); opacity: 0; transition: all 0.25s; z-index: 200;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Atria</div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-title">Care Coordinator Dashboard</div>
+  <div class="topbar-right">
+    <div class="topbar-badge ai-pulse">⚡ AI Active</div>
+    <div class="topbar-avatar">SK</div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Workspace</div>
+    <div class="nav-item active">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Priority Queue <span class="nav-badge" id="sidebar-count">5</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+      Members <span class="nav-badge teal">12</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      Messages
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      Referrals
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Reports
+    </div>
+    <div class="sidebar-footer">Pod A · 14 active members today</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="queue-header">
+      <div>
+        <h1>Today's Priority Queue</h1>
+        <div class="queue-meta">Monday · AI-ranked · <span id="task-count">5</span> items remaining</div>
+      </div>
+      <div class="queue-header-right">
+        <button class="btn-sm btn-ghost">↑↓ Sort</button>
+        <button class="btn-sm btn-ghost">⚙ Filter</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-pill active" onclick="filterTasks('all',this)">All</button>
+      <button class="filter-pill" onclick="filterTasks('urgent',this)">🔴 Urgent</button>
+      <button class="filter-pill" onclick="filterTasks('high',this)">🟡 High</button>
+      <button class="filter-pill" onclick="filterTasks('normal',this)">🔵 Normal</button>
+      <button class="filter-pill" onclick="filterTasks('done',this)">✓ Done</button>
+    </div>
+
+    <div class="task-list" id="task-list"></div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="empty-panel" id="panel-empty">
+      <div class="empty-icon">👤</div>
+      <div>Select a task to see<br>member context &amp; AI score</div>
+    </div>
+    <div id="panel-content" style="display:none;flex-direction:column;height:100%;overflow-y:auto;">
+      <div class="panel-header" id="panel-name"></div>
+
+      <div class="panel-section">
+        <div class="panel-label">Member Profile</div>
+        <div id="panel-age"        class="panel-value"></div>
+        <div id="panel-conditions" class="panel-value" style="margin-top:3px;"></div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-label">At a Glance</div>
+        <div class="member-stat"><span class="stat-label">Open tasks</span>   <span class="stat-val red"   id="p-open"></span></div>
+        <div class="member-stat"><span class="stat-label">Last contact</span> <span class="stat-val gold"  id="p-last"></span></div>
+        <div class="member-stat"><span class="stat-label">Next appt</span>    <span class="stat-val green" id="p-appt"></span></div>
+        <div class="member-stat"><span class="stat-label">Open referrals</span><span class="stat-val"      id="p-refs"></span></div>
+      </div>
+
+      <!-- AI SCORE BREAKDOWN -->
+      <div class="score-block">
+        <div class="panel-label" style="margin-bottom:8px;">AI Priority Score</div>
+        <div id="score-rows"></div>
+        <div class="total-score">
+          <span class="total-label">Total Score</span>
+          <span class="total-val" id="score-total"></span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-label">Last Action</div>
+        <div id="p-lastaction" class="panel-value"></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ══ DRAFT MODAL ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="draft-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="draft-title">Draft Reply</div><div class="modal-subtitle" id="draft-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('draft-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="draft-label">Message <span class="draft-ai-chip">AI Draft</span></div>
+      <textarea class="draft-textarea" id="draft-text"></textarea>
+      <div class="draft-meta">
+        <span>📨 Via: <strong id="draft-channel">Zendesk</strong></span>
+        <span>🤖 Confidence: <strong style="color:var(--greenlt)">High</strong></span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-discard" onclick="closeModal('draft-modal')">Discard</button>
+      <button class="btn-send" onclick="sendDraft()">Send Message ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OVERRIDE MODAL ══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="override-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Override AI Priority</div><div class="modal-subtitle" id="override-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('override-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Current AI breakdown -->
+      <div class="override-score-preview" id="override-score-preview"></div>
+
+      <!-- Choose new priority -->
+      <div class="form-label" style="margin-bottom:8px;">Set new priority</div>
+      <div class="override-priority-select" id="prio-opts">
+        <div class="prio-opt urgent" data-val="urgent" onclick="selectPrio(this)">URGENT</div>
+        <div class="prio-opt high"   data-val="high"   onclick="selectPrio(this)">HIGH</div>
+        <div class="prio-opt normal" data-val="normal" onclick="selectPrio(this)">NORMAL</div>
+        <div class="prio-opt low"    data-val="low"    onclick="selectPrio(this)">LOW</div>
+      </div>
+
+      <!-- Reason -->
+      <div class="form-label">Reason for override <span style="color:var(--coral)">*</span></div>
+      <textarea class="form-textarea" id="override-reason"
+        placeholder="e.g. Member called earlier today — situation is stable, follow-up not needed until next week…"></textarea>
+
+      <div class="model-note">
+        ⚡ Your override and reasoning will be logged to the model training queue. Patterns across overrides help improve future AI scoring.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-discard" onclick="closeModal('override-modal')">Cancel</button>
+      <button class="btn-send green" onclick="confirmOverride()">Apply Override ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SNOOZE MODAL ════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="snooze-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Snooze Task</div><div class="modal-subtitle" id="snooze-sub">Choose when to resurface</div></div>
+      <button class="modal-close" onclick="closeModal('snooze-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-label" style="margin-bottom:8px;">Remind me in</div>
+      <div class="snooze-options">
+        <div class="snooze-opt" onclick="selectSnooze(this,'2 hours')">2 hours</div>
+        <div class="snooze-opt" onclick="selectSnooze(this,'Tomorrow AM')">Tomorrow AM</div>
+        <div class="snooze-opt" onclick="selectSnooze(this,'2 days')">2 days</div>
+        <div class="snooze-opt" onclick="selectSnooze(this,'1 week')">1 week</div>
+      </div>
+      <div class="form-label">Reason (logged to member record)</div>
+      <textarea class="form-textarea" id="snooze-reason" placeholder="e.g. Waiting for lab results from cardiology…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-discard" onclick="closeModal('snooze-modal')">Cancel</button>
+      <button class="btn-send"    onclick="confirmSnooze()">Confirm Snooze</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ESCALATE MODAL ═════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="escalate-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Escalate to Physician</div><div class="modal-subtitle" id="escalate-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('escalate-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="escalate-form">
+        <div>
+          <div class="form-label">Escalate to</div>
+          <select class="form-select">
+            <option>Dr. Chen — Internal Medicine (CMO)</option>
+            <option>Dr. Patel — Cardiology</option>
+            <option>Dr. Rivera — Endocrinology</option>
+            <option>Dr. Kim — Neurology</option>
+          </select>
+        </div>
+        <div>
+          <div class="form-label">Urgency</div>
+          <select class="form-select">
+            <option>Urgent — Response needed today</option>
+            <option>High — Response within 24 hours</option>
+            <option>Routine — Response within 48 hours</option>
+          </select>
+        </div>
+        <div>
+          <div class="form-label">Clinical note for physician</div>
+          <textarea class="form-textarea" style="height:80px;" id="escalate-note" placeholder="Summarize what the physician needs to know…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-discard" onclick="closeModal('escalate-modal')">Cancel</button>
+      <button class="btn-send red" onclick="confirmEscalate()">Escalate Now ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<script>
+/* ── DATA ── */
+const tasks = [
+  {
+    id:1, priority:'urgent',
+    member:'James M., 64', age:'64 · Male',
+    conditions:'Hypertension, Type 2 Diabetes, CAD',
+    desc:'Cardiology follow-up — 12 days overdue. Scheduled post-cath review has not been logged.',
+    aiReason:'Overdue 12 days + open lab result + chronic CAD risk',
+    channel:'Zendesk', time:'8:02 AM',
+    openTasks:4, lastContact:'12 days ago', nextAppt:'Mar 31', refs:'2 open',
+    lastAction:'Lab order placed by Dr. Patel on Mar 18',
+    tags:['Cardiology','Lab Pending'],
+    scores:{ 'Clinical Risk':38, 'SLA Age':30, 'Comm. Gap':22, 'Open Items':10 },
+    draft:`Hi James,\n\nI wanted to follow up on your cardiology appointment that was scheduled following your procedure. I noticed we haven't connected in a few weeks and want to make sure you're doing well and that your follow-up care is on track.\n\nCould you let me know how you're feeling and confirm a time to speak with Dr. Patel's team this week? I can help coordinate the scheduling.\n\nWarm regards,\nSarah K.\nCare Coordinator, Atria`
+  },
+  {
+    id:2, priority:'high',
+    member:'Linda R., 71', age:'71 · Female',
+    conditions:'Osteoporosis, Hypothyroidism, Mild Cognitive Impairment',
+    desc:'Lab results received — TSH elevated. Response needed before Thursday appointment.',
+    aiReason:'Lab result in + appointment in 2 days + no CC action logged yet',
+    channel:'Spruce', time:'9:15 AM',
+    openTasks:2, lastContact:'4 days ago', nextAppt:'Thu Apr 3', refs:'1 open',
+    lastAction:'TSH lab result received from Quest Diagnostics',
+    tags:['Lab Result','Appt Soon'],
+    scores:{ 'Clinical Risk':28, 'SLA Age':18, 'Comm. Gap':14, 'Open Items':8 },
+    draft:`Hi Linda,\n\nYour recent lab work came back and Dr. Rivera would like to review the results with you at your Thursday appointment. Your TSH level is slightly elevated — nothing to be alarmed about, but it's worth discussing.\n\nPlease let me know if you have any questions before then.\n\nTake care,\nSarah K.\nCare Coordinator, Atria`
+  },
+  {
+    id:3, priority:'high',
+    member:'David C., 58', age:'58 · Male',
+    conditions:'Prediabetes, Hyperlipidemia',
+    desc:'Cross-pod referral to Nutrition unacknowledged — 48 hours since no action from receiving pod.',
+    aiReason:'Referral SLA breach: 48h with no logged action from Nutrition pod',
+    channel:'Internal', time:'10:30 AM',
+    openTasks:1, lastContact:'6 days ago', nextAppt:'Apr 14', refs:'1 pending',
+    lastAction:'Referral sent to Nutrition pod on Mar 28',
+    tags:['Referral SLA','Nutrition'],
+    scores:{ 'Clinical Risk':18, 'SLA Age':35, 'Comm. Gap':12, 'Open Items':6 },
+    draft:`Hi David,\n\nI wanted to let you know that we've referred you to our Nutrition team as part of your preventive care plan. I'm following up to make sure that connection happens smoothly.\n\nExpect to hear from a Nutrition specialist this week.\n\nBest,\nSarah K.\nCare Coordinator, Atria`
+  },
+  {
+    id:4, priority:'normal',
+    member:'Patricia S., 67', age:'67 · Female',
+    conditions:'Breast Cancer Survivor, Hypertension',
+    desc:'Annual mammogram reminder — due end of month. No appointment scheduled.',
+    aiReason:'Preventive screening SLA approaching: due Apr 30',
+    channel:'Zendesk', time:'11:00 AM',
+    openTasks:1, lastContact:'18 days ago', nextAppt:'None scheduled', refs:'None',
+    lastAction:'Last mammogram completed Apr 2024 — annual due',
+    tags:['Preventive','Screening Due'],
+    scores:{ 'Clinical Risk':22, 'SLA Age':15, 'Comm. Gap':20, 'Open Items':4 },
+    draft:`Hi Patricia,\n\nAs part of your annual preventive care schedule, your mammogram is due this month. Given your history, staying on track with this screening is an important part of your care plan.\n\nI'd love to help schedule this at a time that works for you.\n\nWarm regards,\nSarah K.\nCare Coordinator, Atria`
+  },
+  {
+    id:5, priority:'normal',
+    member:'Robert T., 55', age:'55 · Male',
+    conditions:'Executive Wellness, Travel Health',
+    desc:"Q1 wellness check-in — member hasn't completed health survey sent 10 days ago.",
+    aiReason:'Survey open 10 days + Q1 check-in SLA approaching',
+    channel:'Zendesk', time:'2:15 PM',
+    openTasks:1, lastContact:'10 days ago', nextAppt:'Apr 22', refs:'None',
+    lastAction:'Q1 wellness survey sent via Zendesk Mar 20',
+    tags:['Wellness','Survey'],
+    scores:{ 'Clinical Risk':8, 'SLA Age':14, 'Comm. Gap':12, 'Open Items':4 },
+    draft:`Hi Robert,\n\nI wanted to follow up on the Q1 wellness survey we sent over a couple of weeks ago — I know your schedule is busy. It only takes about 5 minutes and helps your care team prepare for your April visit.\n\nHere's the link again: [survey link].\n\nThanks,\nSarah K.\nCare Coordinator, Atria`
+  }
+];
+
+/* ── STATE ── */
+let selectedTask   = null;
+let activeFilter   = 'all';
+let completedIds   = new Set();
+let overrideState  = {};   // id → {priority, reason}
+let activeOverride = null; // task being overridden
+let chosenPriority = null;
+let chosenSnooze   = null;
+let toastTimer;
+
+const SCORE_COLORS = {
+  'Clinical Risk': '#E85D4A',
+  'SLA Age':       '#F5A623',
+  'Comm. Gap':     '#028090',
+  'Open Items':    '#4A6B7C'
+};
+
+/* ── RENDER ── */
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+
+  const filtered = tasks.filter(t => {
+    const done = completedIds.has(t.id);
+    if (activeFilter === 'done')   return done;
+    if (activeFilter === 'all')    return !done;
+    const eff = overrideState[t.id]?.priority || t.priority;
+    return eff === activeFilter && !done;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">${activeFilter==='done'?'No completed tasks yet.':'No tasks in this category.'}</div>`;
+    return;
+  }
+
+  filtered.forEach(t => {
+    const done = completedIds.has(t.id);
+    const ov   = overrideState[t.id];
+    const dispPriority = ov ? ov.priority : t.priority;
+
+    const card = document.createElement('div');
+    card.className = `task-card ${done?'done':dispPriority}${selectedTask?.id===t.id?' selected':''}${ov?' overridden':''}`;
+    card.id = `task-${t.id}`;
+    card.onclick = () => selectTask(t);
+
+    const scores = t.scores;
+    const total  = Object.values(scores).reduce((a,b)=>a+b,0);
+    const factorHTML = Object.entries(scores).map(([k,v]) => {
+      const pct = Math.round(v/total*100);
+      return `<div class="score-expand-row">
+        <span class="se-label">${k}</span>
+        <div class="se-bar-w"><div class="se-bar" style="width:${pct}%;background:${SCORE_COLORS[k]||'#028090'}"></div></div>
+        <span class="se-num">${v}</span>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="task-top">
+        <span class="priority-badge badge-${done?'done':dispPriority}">${done?'DONE':dispPriority.toUpperCase()}</span>
+        ${ov?`<span class="priority-badge badge-override" style="font-size:8px;">CC OVERRIDE</span>`:''}
+        <span class="task-member">${t.member}</span>
+        <span class="task-time">${t.time}</span>
+      </div>
+      <div class="task-desc">${t.desc}</div>
+      ${!done?`
+        <div class="task-reason" onclick="event.stopPropagation();toggleScore(${t.id})">
+          ⚡ ${ov ? `<span style="color:var(--greenlt)">Overridden: ${ov.reason.substring(0,55)}${ov.reason.length>55?'…':''}</span>` : t.aiReason}
+          <span class="reason-expand">▾ Score</span>
+        </div>
+        <div class="score-expand" id="score-${t.id}">
+          ${factorHTML}
+          <div class="se-total"><span class="se-total-label">Total Score</span><span class="se-total-val" style="color:${scoreColor(total)}">${total} / 100</span></div>
+        </div>
+        ${ov?`<div class="override-pill">⟳ CC lowered to ${ov.priority.toUpperCase()} — logged to model</div>`:''}
+        <div class="task-actions">
+          <button class="action-btn btn-draft"    onclick="event.stopPropagation();openDraft(${t.id})">✦ Draft Reply</button>
+          <button class="action-btn btn-escalate" onclick="event.stopPropagation();openEscalate(${t.id})">↑ Escalate</button>
+          <button class="action-btn btn-override" onclick="event.stopPropagation();openOverride(${t.id})">⟳ Override</button>
+          <button class="action-btn btn-snooze"   onclick="event.stopPropagation();openSnooze(${t.id})">⏸ Snooze</button>
+          <button class="action-btn btn-done"     onclick="event.stopPropagation();markDone(${t.id})">✓ Done</button>
+          <div class="task-tags">${t.tags.map(tg=>`<span class="tag">${tg}</span>`).join('')}</div>
+        </div>
+      `:`<div style="font-size:11px;color:var(--green);margin-top:4px;">✓ Completed</div>`}
+    `;
+    list.appendChild(card);
+  });
+
+  const rem = tasks.filter(t=>!completedIds.has(t.id)).length;
+  document.getElementById('task-count').textContent = rem;
+  document.getElementById('sidebar-count').textContent = rem;
+}
+
+function scoreColor(n) {
+  if (n >= 80) return 'var(--coral)';
+  if (n >= 55) return 'var(--gold)';
+  if (n >= 35) return 'var(--teallt)';
+  return 'var(--muted)';
+}
+
+/* ── SELECT TASK → panel ── */
+function selectTask(t) {
+  selectedTask = t;
+  renderTasks();
+
+  document.getElementById('panel-empty').style.display   = 'none';
+  const pc = document.getElementById('panel-content');
+  pc.style.display = 'flex';
+
+  document.getElementById('panel-name').textContent       = t.member;
+  document.getElementById('panel-age').textContent        = t.age;
+  document.getElementById('panel-conditions').textContent = t.conditions;
+  document.getElementById('p-open').textContent           = t.openTasks;
+  document.getElementById('p-last').textContent           = t.lastContact;
+  document.getElementById('p-appt').textContent           = t.nextAppt;
+  document.getElementById('p-refs').textContent           = t.refs;
+  document.getElementById('p-lastaction').textContent     = t.lastAction;
+
+  // Score rows in panel
+  const total = Object.values(t.scores).reduce((a,b)=>a+b,0);
+  let html = '';
+  Object.entries(t.scores).forEach(([k,v]) => {
+    const pct = Math.round(v/total*100);
+    html += `<div class="score-row">
+      <span class="score-factor">${k}</span>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%;background:${SCORE_COLORS[k]||'#028090'}"></div></div>
+      <span class="score-num" style="color:${SCORE_COLORS[k]||'#fff'}">${v}</span>
+    </div>`;
+  });
+  document.getElementById('score-rows').innerHTML = html;
+  document.getElementById('score-total').textContent = total + ' / 100';
+  document.getElementById('score-total').style.color = scoreColor(total);
+}
+
+/* ── INLINE SCORE TOGGLE ── */
+function toggleScore(id) {
+  const el = document.getElementById('score-'+id);
+  if (el) el.classList.toggle('open');
+}
+
+/* ── FILTER ── */
+function filterTasks(type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+
+/* ── DRAFT ── */
+function openDraft(id) {
+  const t = tasks.find(x=>x.id===id);
+  document.getElementById('draft-title').textContent   = `Draft Reply — ${t.member}`;
+  document.getElementById('draft-sub').textContent     = t.desc;
+  document.getElementById('draft-text').value          = t.draft;
+  document.getElementById('draft-channel').textContent = t.channel;
+  openModal('draft-modal');
+}
+function sendDraft() {
+  closeModal('draft-modal');
+  showToast('✓','Message sent via ' + document.getElementById('draft-channel').textContent);
+}
+
+/* ── OVERRIDE ── */
+function openOverride(id) {
+  const t = tasks.find(x=>x.id===id);
+  activeOverride = id;
+  chosenPriority = null;
+  document.getElementById('override-reason').value = '';
+  document.getElementById('override-sub').textContent = t.member + ' · currently ' + (overrideState[id]?.priority || t.priority).toUpperCase();
+
+  // Score preview
+  const total = Object.values(t.scores).reduce((a,b)=>a+b,0);
+  let html = `<div class="panel-label" style="margin-bottom:8px;">Current AI Score Breakdown</div>`;
+  Object.entries(t.scores).forEach(([k,v]) => {
+    const pct = Math.round(v/total*100);
+    html += `<div class="override-score-row">
+      <span class="override-score-label">${k}</span>
+      <div class="override-score-bar-wrap"><div class="override-score-bar" style="width:${pct}%;background:${SCORE_COLORS[k]||'#028090'}"></div></div>
+      <span class="override-change change-same">${v}</span>
+    </div>`;
+  });
+  html += `<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07)"><span style="font-size:10px;color:var(--muted)">Total</span><span style="font-size:11px;font-weight:700;font-family:'DM Mono',monospace;color:${scoreColor(total)}">${total} / 100</span></div>`;
+  document.getElementById('override-score-preview').innerHTML = html;
+
+  // highlight current priority
+  const cur = overrideState[id]?.priority || t.priority;
+  document.querySelectorAll('.prio-opt').forEach(o => {
+    o.classList.remove('active-sel','dimmed');
+    if (o.dataset.val === cur) o.classList.add('active-sel');
+  });
+
+  openModal('override-modal');
+}
+
+function selectPrio(el) {
+  chosenPriority = el.dataset.val;
+  document.querySelectorAll('.prio-opt').forEach(o => {
+    o.classList.remove('active-sel','dimmed');
+    if (o.dataset.val !== chosenPriority) o.classList.add('dimmed');
+    else o.classList.add('active-sel');
+  });
+}
+
+function confirmOverride() {
+  const reason = document.getElementById('override-reason').value.trim();
+  if (!chosenPriority) { showToast('⚠','Please select a new priority level'); return; }
+  if (!reason)         { showToast('⚠','Please enter a reason for the override'); return; }
+
+  const t = tasks.find(x=>x.id===activeOverride);
+  overrideState[activeOverride] = { priority: chosenPriority, reason };
+  closeModal('override-modal');
+  showToast('⟳', `Priority changed to ${chosenPriority.toUpperCase()} — logged to model`);
+
+  // re-select to refresh panel if it's the active task
+  if (selectedTask?.id === activeOverride) selectTask(t);
+  renderTasks();
+}
+
+/* ── SNOOZE ── */
+function openSnooze(id) {
+  chosenSnooze = null;
+  document.querySelectorAll('.snooze-opt').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('snooze-reason').value = '';
+  const t = tasks.find(x=>x.id===id);
+  document.getElementById('snooze-sub').textContent = t.member + ' · ' + t.desc.substring(0,55) + '…';
+  openModal('snooze-modal');
+}
+function selectSnooze(el, val) {
+  document.querySelectorAll('.snooze-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected'); chosenSnooze = val;
+}
+function confirmSnooze() {
+  if (!chosenSnooze) { showToast('⚠','Please select a snooze duration'); return; }
+  closeModal('snooze-modal');
+  showToast('⏸',`Snoozed until ${chosenSnooze} — reason logged`);
+}
+
+/* ── ESCALATE ── */
+function openEscalate(id) {
+  const t = tasks.find(x=>x.id===id);
+  document.getElementById('escalate-sub').textContent = t.member + ' — ' + t.desc.substring(0,55) + '…';
+  document.getElementById('escalate-note').value = '';
+  openModal('escalate-modal');
+}
+function confirmEscalate() {
+  closeModal('escalate-modal');
+  showToast('↑','Escalated to physician — notification sent');
+}
+
+/* ── DONE ── */
+function markDone(id) {
+  completedIds.add(id);
+  if (selectedTask?.id === id) {
+    selectedTask = null;
+    document.getElementById('panel-empty').style.display = 'flex';
+    document.getElementById('panel-content').style.display = 'none';
+  }
+  renderTasks();
+  showToast('✓','Task complete — member record updated');
+}
+
+/* ── MODAL HELPERS ── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); });
+});
+
+/* ── TOAST ── */
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent  = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── INIT ── */
+renderTasks();
+</script>
+</body>
+</html>
